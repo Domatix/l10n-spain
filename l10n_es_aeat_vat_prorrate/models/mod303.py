@@ -3,7 +3,7 @@
 # Copyright 2015-2017 Tecnativa - Pedro M. Baeza <pedro.baeza@tecnativa.com>
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-from openerp import models, fields, api, exceptions, _
+from odoo import models, fields, api, exceptions, _
 
 PRORRATE_TAX_LINE_MAPPING = {
     29: 28,
@@ -19,7 +19,7 @@ class L10nEsAeatMod303Report(models.Model):
     _inherit = 'l10n.es.aeat.mod303.report'
 
     @api.multi
-    @api.depends('tax_lines', 'tax_lines.amount', 'casilla_44')
+    @api.depends('tax_line_ids', 'tax_line_ids.amount', 'casilla_44')
     def _compute_total_deducir(self):
         super(L10nEsAeatMod303Report, self)._compute_total_deducir()
         for report in self:
@@ -61,10 +61,6 @@ class L10nEsAeatMod303Report(models.Model):
     @api.multi
     def _calculate_casilla_44(self):
         self.ensure_one()
-        self.casilla_44 = 0
-        if (self.vat_prorrate_type != 'general' or
-                self.period_type not in ('4T', '12')):
-            return
         # Get prorrate from previous declarations
         min_date = min(self.periods.mapped('date_start'))
         prev_reports = self._get_previous_fiscalyear_reports(min_date)
@@ -85,6 +81,10 @@ class L10nEsAeatMod303Report(models.Model):
     def calculate(self):
         res = super(L10nEsAeatMod303Report, self).calculate()
         for report in self:
+            report.casilla_44 = 0
+            if (report.vat_prorrate_type != 'general' or
+                    report.period_type not in ('4T', '12')):
+                continue
             report._calculate_casilla_44()
             account_number = '6391%' if report.casilla_44 > 0 else '6341%'
             # Choose default account according result
@@ -92,7 +92,6 @@ class L10nEsAeatMod303Report(models.Model):
                 self.env['account.account'].search([
                     ('code', 'like', account_number),
                     ('company_id', '=', report.company_id.id),
-                    ('type', '!=', 'view'),
                 ], limit=1)
             )
         return res
@@ -122,10 +121,10 @@ class L10nEsAeatMod303Report(models.Model):
                     PRORRATE_TAX_LINE_MAPPING.keys()):
                 continue
             factor = (100 - self.vat_prorrate_percent) / 100
-            base_tax_line = self.tax_lines.filtered(
+            base_tax_line = self.tax_line_ids.filtered(
                 lambda x: x.field_number == PRORRATE_TAX_LINE_MAPPING[
                     tax_line.field_number])
-            if not base_tax_line.move_lines:
+            if not base_tax_line.move_line_ids:
                 continue
             prorrate_debit = sum(x['debit'] for x in lines)
             prorrate_credit = sum(x['credit'] for x in lines)
@@ -133,19 +132,21 @@ class L10nEsAeatMod303Report(models.Model):
             total_prorrate = round(
                 (prorrate_debit - prorrate_credit) * factor, prec)
             account_groups = self.env['account.move.line'].read_group(
-                [('id', 'in', base_tax_line.move_lines.ids)],
-                ['tax_amount', 'account_id', 'account_analytic_id'],
-                ['account_id', 'account_analytic_id'])
-            total_balance = sum(x['tax_amount'] for x in account_groups)
+                [('id', 'in', base_tax_line.move_line_ids.ids)],
+                ['balance', 'account_id', 'analytic_account_id'],
+                ['account_id', 'analytic_account_id'],
+            )
+            total_balance = sum(x['balance'] for x in account_groups)
             extra_lines = []
             amount_factor = abs(total_prorrate) / abs(total_balance)
             for account_group in account_groups:
                 analytic_groups = self.env['account.move.line'].read_group(
                     account_group['__domain'],
-                    ['tax_amount', 'analytic_account_id'],
-                    ['analytic_account_id'])
+                    ['balance', 'analytic_account_id'],
+                    ['analytic_account_id'],
+                )
                 for analytic_group in analytic_groups:
-                    balance = analytic_group['tax_amount'] * amount_factor
+                    balance = analytic_group['balance'] * amount_factor
                     move_line_vals = {
                         'name': account_group['account_id'][1],
                         'account_id': account_group['account_id'][0],

@@ -250,23 +250,25 @@ class TestL10nEsAeatMod303Base(TestL10nEsAeatModBase):
         '75': 0,
     }
 
-    def test_model_303(self):
+    @classmethod
+    def setUpClass(cls):
+        super(TestL10nEsAeatMod303Base, cls).setUpClass()
         # Purchase invoices
-        self._invoice_purchase_create('2017-01-01')
-        self._invoice_purchase_create('2017-01-02')
-        purchase = self._invoice_purchase_create('2017-01-03')
-        self._invoice_refund(purchase, '2017-01-18')
+        cls._invoice_purchase_create('2017-01-01')
+        cls._invoice_purchase_create('2017-01-02')
+        purchase = cls._invoice_purchase_create('2017-01-03')
+        cls._invoice_refund(purchase, '2017-01-18')
         # Sale invoices
-        self._invoice_sale_create('2017-01-11')
-        self._invoice_sale_create('2017-01-12')
-        sale = self._invoice_sale_create('2017-01-13')
-        self._invoice_refund(sale, '2017-01-14')
+        cls._invoice_sale_create('2017-01-11')
+        cls._invoice_sale_create('2017-01-12')
+        sale = cls._invoice_sale_create('2017-01-13')
+        cls._invoice_refund(sale, '2017-01-14')
         # Create model
-        export_config = self.env.ref(
+        export_config = cls.env.ref(
             'l10n_es_aeat_mod303.aeat_mod303_main_export_config')
-        self.model303 = self.env['l10n.es.aeat.mod303.report'].create({
+        cls.model303 = cls.env['l10n.es.aeat.mod303.report'].create({
             'name': '9990000000303',
-            'company_id': self.company.id,
+            'company_id': cls.company.id,
             'company_vat': '1234567890',
             'contact_name': 'Test owner',
             'type': 'N',
@@ -277,10 +279,14 @@ class TestL10nEsAeatMod303Base(TestL10nEsAeatModBase):
             'date_start': '2017-01-01',
             'date_end': '2017-03-31',
             'export_config_id': export_config.id,
-            'journal_id': self.journal_misc.id,
-            'counterpart_account_id': self.accounts['475000'].id
+            'journal_id': cls.journal_misc.id,
+            'counterpart_account_id': cls.accounts['475000'].id
         })
         _logger.debug('Calculate AEAT 303 1T 2017')
+
+
+class TestL10nEsAeatMod303(TestL10nEsAeatMod303Base):
+    def test_model_303(self):
         self.model303.button_calculate()
         # Fill manual fields
         self.model303.write({
