@@ -24,4 +24,4 @@ class L10nEsAeatMod303Report(models.Model):
                 original_taxes * (100 - self.vat_prorrate_percent) / 100
             )
             result += asset.vat_prorrate_increment - real_increment
-        self.casilla_44 = result
+        self.casilla_44 = round(result, 2)

@@ -62,20 +62,22 @@ class L10nEsAeatMod303Report(models.Model):
     def _calculate_casilla_44(self):
         self.ensure_one()
         # Get prorrate from previous declarations
-        min_date = min(self.periods.mapped('date_start'))
-        prev_reports = self._get_previous_fiscalyear_reports(min_date)
+        prev_reports = self._get_previous_fiscalyear_reports(self.date_start)
         if any(x.state == 'draft' for x in prev_reports):
             raise exceptions.Warning(
                 _("There's at least one previous report in draft state. "
                   "Please confirm it before making this one.")
             )
+        result = 0
         for prev_report in prev_reports:
             diff_perc = (self.vat_prorrate_percent -
                          prev_report.vat_prorrate_percent)
             if diff_perc:
-                self.casilla_44 += (
+                result += (
                     diff_perc * prev_report.total_deducir /
-                    prev_report.vat_prorrate_percent)
+                    prev_report.vat_prorrate_percent
+                )
+        self.casilla_44 = round(result, 2)
 
     @api.multi
     def calculate(self):
@@ -122,9 +124,11 @@ class L10nEsAeatMod303Report(models.Model):
                     PRORRATE_TAX_LINE_MAPPING.keys()):
                 continue
             factor = (100 - self.vat_prorrate_percent) / 100
-            base_tax_line = self.tax_lines.filtered(
-                lambda x: x.field_number == PRORRATE_TAX_LINE_MAPPING[
-                    tax_line.field_number])
+            base_tax_line = self.tax_line_ids.filtered(lambda x: (
+                x.field_number == PRORRATE_TAX_LINE_MAPPING[
+                    tax_line.field_number
+                ]
+            ))
             if not base_tax_line.move_line_ids:
                 continue
             tax_account_groups = move_line_obj.read_group(
