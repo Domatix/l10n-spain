@@ -21,7 +21,7 @@
     <field name="name">l10n_es.aeat.report.form</field>
     <field name="model">l10n.es.aeat.report</field>
     <field name="arch" type="xml">
-        <form string="AEAT report">
+        <form name="aeat_report" string="AEAT report">
             <header>
                 <button name="button_calculate" type="object" string="Calculate" states="draft" icon="fa-cogs"/>
                 <button name="button_recalculate" type="object" string="Recalculate" states="calculated" icon="fa-refresh"/>
@@ -56,7 +56,7 @@
                     <label string="Report "/>
                     <field name="name" class="oe_inline" readonly="1"/>
                 </h1>
-                <group string="Declaración"
+                <group name ="declaracion" string="Declaración"
                        colspan="4"
                        name="group_declaration"
                         >

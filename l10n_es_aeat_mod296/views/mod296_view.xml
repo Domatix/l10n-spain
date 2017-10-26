@@ -13,7 +13,7 @@
                     <field name="currency_id" invisible="1"/>
                 </field>
                 <group string="Declaración" position="after">
-                    <group string="Liquidación" colspan="4" states="calculated,done,cancelled">
+                    <group string="Liquidaview_l10n_es_aeat_report_formción" colspan="4" states="calculated,done,cancelled">
                         <field name="casilla_01"/>
                         <field name="casilla_02" widget="monetary"
                                options="{'currency_field': 'currency_id'}"/>
@@ -22,7 +22,7 @@
                         <field name="casilla_04" widget="monetary"
                                options="{'currency_field': 'currency_id'}"/>
                     </group>
-                    <group string="Detalle por empresa" colspan="4" states="calculated,done,cancelled">
+                    <group name="detalle_por_empresa" string="Detalle por empresa" colspan="4" states="calculated,done,cancelled">
                         <field name="lines296" nolabel="1"/>
                     </group>
                 </group>
