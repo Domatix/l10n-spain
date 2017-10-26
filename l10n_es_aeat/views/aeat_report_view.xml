@@ -56,7 +56,7 @@
                     <label string="Report "/>
                     <field name="name" class="oe_inline" readonly="1"/>
                 </h1>
-                <group name ="declaracion" string="Declaración"
+                <group string="Declaración"
                        colspan="4"
                        name="group_declaration"
                         >
